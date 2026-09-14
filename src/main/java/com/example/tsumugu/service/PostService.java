@@ -2,7 +2,6 @@ package com.example.tsumugu.service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 
 import org.springframework.stereotype.Service;
 
@@ -51,4 +50,5 @@ public class PostService {
     	post.setUpdatedAt(now);
     	
     	return postRepository.save(post);
+    }
 }
