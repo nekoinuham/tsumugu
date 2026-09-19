@@ -4,12 +4,15 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.example.tsumugu.entity.Post;
 import com.example.tsumugu.entity.User;
 import com.example.tsumugu.repository.PostRepository;
 import com.example.tsumugu.repository.UserRepository;
+import com.example.tsumugu.security.CustomUserDetails;
 
 @Service
 public class PostService {
@@ -25,10 +28,10 @@ public class PostService {
         this.userRepository = userRepository;
     }
 
-    // 現在のユーザーを取得する(後でログイン機能に差し替える箇所)
     private User getCurrentUser() {
-        return userRepository.findById(CURRENT_USER_ID)
-                .orElseThrow(() -> new RuntimeException("ユーザーが見つかりません"));
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        return userDetails.getUser();
     }
     
     public Post createOrUpdateTodayPost(String diaryText, Integer mood, Double sleepHours) {
