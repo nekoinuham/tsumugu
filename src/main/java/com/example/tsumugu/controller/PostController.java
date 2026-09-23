@@ -21,17 +21,19 @@ public class PostController {
     }
 
     @PostMapping("/today")
-    public Post createOrUpdateTodayPost(@RequestBody PostRequest request) {
-        return postService.createOrUpdateTodayPost(
+    public PostResponse createOrUpdateTodayPost(@RequestBody PostRequest request) {
+        Post post = postService.createOrUpdateTodayPost(
                 request.getDiaryText(),
                 request.getMood(),
                 request.getSleepHours()
         );
+        return new PostResponse(post);
     }
     
     @GetMapping("/today")
-    public ResponseEntity<Post> getTodayPost() {
+    public ResponseEntity<PostResponse> getTodayPost() {
         return postService.getTodayPost()
+        		.map(PostResponse::new)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.noContent().build());
     }
