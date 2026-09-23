@@ -2,7 +2,6 @@ package com.example.tsumugu.service;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -15,6 +14,7 @@ import com.example.tsumugu.entity.Photo;
 import com.example.tsumugu.entity.Post;
 import com.example.tsumugu.repository.PhotoRepository;
 
+@Service
 public class PhotoService {
 
 	private static final int MAX_PHOTOS_PER_POST = 4;
