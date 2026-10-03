@@ -2,34 +2,26 @@ package com.example.tsumugu.service;
 
 import java.time.LocalDateTime;
 
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.example.tsumugu.entity.Like;
 import com.example.tsumugu.entity.Post;
 import com.example.tsumugu.entity.User;
 import com.example.tsumugu.repository.LikeRepository;
-import com.example.tsumugu.security.CustomUserDetails;
 
 @Service
 public class LikeService {
 
     private final LikeRepository likeRepository;
+    private final CurrentUserService currentUserService;
 
-    public LikeService(LikeRepository likeRepository) {
+    public LikeService(LikeRepository likeRepository, CurrentUserService currentUserService) {
         this.likeRepository = likeRepository;
-    }
-
-    private User getCurrentUser() {
-        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder
-                .getContext()
-                .getAuthentication()
-                .getPrincipal();
-        return userDetails.getUser();
+        this.currentUserService = currentUserService;
     }
 
     public long likePost(Post post) {
-        User currentUser = getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
 
         boolean alreadyLiked = likeRepository.findByPostAndUser(post, currentUser).isPresent();
         if (!alreadyLiked) {
@@ -44,7 +36,7 @@ public class LikeService {
     }
 
     public long unlikePost(Post post) {
-        User currentUser = getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
 
         likeRepository.findByPostAndUser(post, currentUser)
                 .ifPresent(likeRepository::delete);

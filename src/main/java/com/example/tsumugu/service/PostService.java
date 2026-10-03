@@ -4,38 +4,25 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.example.tsumugu.entity.Post;
 import com.example.tsumugu.entity.User;
 import com.example.tsumugu.repository.PostRepository;
-import com.example.tsumugu.repository.UserRepository;
-import com.example.tsumugu.security.CustomUserDetails;
 
 @Service
 public class PostService {
 
-    // 認証機能ができるまでの固定ユーザーID
-    private static final Long CURRENT_USER_ID = 1L;
-
     private final PostRepository postRepository;
-    private final UserRepository userRepository;
+    private final CurrentUserService currentUserService;
 
-    public PostService(PostRepository postRepository, UserRepository userRepository) {
+    public PostService(PostRepository postRepository, CurrentUserService currentUserService) {
         this.postRepository = postRepository;
-        this.userRepository = userRepository;
-    }
-
-    private User getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        return userDetails.getUser();
+        this.currentUserService = currentUserService;
     }
     
     public Post createOrUpdateTodayPost(String diaryText, Integer mood, Double sleepHours) {
-    	User currentUser = getCurrentUser();
+    	User currentUser = currentUserService.getCurrentUser();
     	LocalDate today = LocalDate.now();
     	
     	Post post = postRepository.findByUserAndDate(currentUser, today)
@@ -57,7 +44,7 @@ public class PostService {
     }
     
     public Optional<Post> getTodayPost() {
-        User currentUser = getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
         LocalDate today = LocalDate.now();
         return postRepository.findByUserAndDate(currentUser, today);
     }
