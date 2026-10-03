@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,10 +14,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.tsumugu.entity.Comment;
 import com.example.tsumugu.entity.Post;
-import com.example.tsumugu.entity.User;
 import com.example.tsumugu.repository.PostRepository;
-import com.example.tsumugu.security.CustomUserDetails;
 import com.example.tsumugu.service.CommentService;
+import com.example.tsumugu.service.CurrentUserService;
+import com.example.tsumugu.service.PostAccessService;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -26,22 +25,21 @@ public class CommentController {
 
     private final CommentService commentService;
     private final PostRepository postRepository;
+    private final PostAccessService postAccessService;
+    private final CurrentUserService currentUserService;
 
-    public CommentController(CommentService commentService, PostRepository postRepository) {
+    public CommentController(
+            CommentService commentService,
+            PostRepository postRepository,
+            PostAccessService postAccessService,
+            CurrentUserService currentUserService) {
         this.commentService = commentService;
         this.postRepository = postRepository;
-    }
-    
- // ログイン中のユーザーを取得する
-    private User getCurrentUser() {
-        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder
-                .getContext()
-                .getAuthentication()
-                .getPrincipal();
-        return userDetails.getUser();
+        this.postAccessService = postAccessService;
+        this.currentUserService = currentUserService;
     }
 
-    // コメントを投稿する(公開されている投稿のみ)
+    // コメントを投稿する
     @PostMapping("/{postId}/comments")
     public ResponseEntity<CommentResponse> addComment(
             @PathVariable Long postId,
@@ -50,7 +48,7 @@ public class CommentController {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("投稿が見つかりません"));
 
-        if (!post.isPublic()) {
+        if (!postAccessService.canView(post, currentUserService.getCurrentUser())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
@@ -58,18 +56,15 @@ public class CommentController {
         return ResponseEntity.ok(new CommentResponse(comment));
     }
 
- // 投稿に紐づくコメント一覧を取得する
+    // 投稿に紐づくコメント一覧を取得する
     @GetMapping("/{postId}/comments")
     public ResponseEntity<List<CommentResponse>> getComments(@PathVariable Long postId) {
+
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("投稿が見つかりません"));
 
-        // 非公開投稿は、投稿者本人以外は閲覧不可
-        if (!post.isPublic()) {
-            User currentUser = getCurrentUser();
-            if (!post.getUser().getId().equals(currentUser.getId())) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            }
+        if (!postAccessService.canView(post, currentUserService.getCurrentUser())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         List<CommentResponse> responses = commentService.getComments(post)
