@@ -3,36 +3,27 @@ package com.example.tsumugu.service;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.example.tsumugu.entity.Comment;
 import com.example.tsumugu.entity.Post;
 import com.example.tsumugu.entity.User;
 import com.example.tsumugu.repository.CommentRepository;
-import com.example.tsumugu.security.CustomUserDetails;
 
 @Service
 public class CommentService {
 	
 	private final CommentRepository commentRepository;
+	private final CurrentUserService currentUserService;
 	
-	public CommentService(CommentRepository commentRepository) {
+	public CommentService(CommentRepository commentRepository, CurrentUserService currentUserService) {
 		this.commentRepository = commentRepository;
-	}
-	
-	// ログイン中のユーザーを取得する
-	private User getCurrentUser() {
-		CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder
-				.getContext()
-				.getAuthentication()
-				.getPrincipal();
-		return userDetails.getUser();
+		this.currentUserService = currentUserService;
 	}
 	
 	// コメントを投稿する
 	public Comment addComment(Post post, String commentText) {
-		User currentUser = getCurrentUser();
+		User currentUser = currentUserService.getCurrentUser();
 		
 		Comment comment = new Comment();
 		comment.setPost(post);
@@ -49,17 +40,20 @@ public class CommentService {
 		return commentRepository.findByPostOrderByCreatedAtAsc(post);
 	}
 	
-	// コメントを削除する(投稿者本人のみ削除可能)
+	// コメントを削除する(コメントした本人、または投稿の持ち主)
 	public void deleteComment(Long commentId) {
-		User currentUser = getCurrentUser();
-		
-		Comment comment = commentRepository.findById(commentId)
-				.orElseThrow(() -> new IllegalArgumentException("コメントが見つかりません"));
-		
-		if (!comment.getUser().getId().equals(currentUser.getId())) {
-			throw new IllegalStateException("自分のコメントのみ削除できます");
-		}
-		
-		commentRepository.delete(comment);
+	    User currentUser = currentUserService.getCurrentUser();
+
+	    Comment comment = commentRepository.findById(commentId)
+	            .orElseThrow(() -> new IllegalArgumentException("コメントが見つかりません"));
+
+	    boolean isCommentAuthor = comment.getUser().getId().equals(currentUser.getId());
+	    boolean isPostOwner = comment.getPost().getUser().getId().equals(currentUser.getId());
+
+	    if (!isCommentAuthor && !isPostOwner) {
+	        throw new IllegalStateException("コメントを削除できるのは、コメントした本人か投稿の持ち主のみです");
+	    }
+
+	    commentRepository.delete(comment);
 	}
 }
