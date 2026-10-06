@@ -19,6 +19,7 @@ public class PostResponse {
     private final Double sleepHours;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
+    private final Boolean isPublic;
 
     public PostResponse(Post post) {
         this.id = post.getId();
@@ -30,5 +31,6 @@ public class PostResponse {
         this.sleepHours = post.getSleepHours();
         this.createdAt = post.getCreatedAt();
         this.updatedAt = post.getUpdatedAt();
+        this.isPublic = post.isPublic();
     }
 }

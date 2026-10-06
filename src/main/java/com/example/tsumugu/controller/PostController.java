@@ -25,7 +25,8 @@ public class PostController {
         Post post = postService.createOrUpdateTodayPost(
                 request.getDiaryText(),
                 request.getMood(),
-                request.getSleepHours()
+                request.getSleepHours(),
+                request.getIsPublic()
         );
         return new PostResponse(post);
     }
