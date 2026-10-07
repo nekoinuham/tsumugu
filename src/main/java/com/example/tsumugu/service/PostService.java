@@ -61,4 +61,11 @@ public class PostService {
         LocalDate today = LocalDate.now();
         return postRepository.findByUserAndDate(currentUser, today);
     }
+    
+    // 投稿の公開設定を変更する
+    public Post updateVisibility(Post post, boolean isPublic) {
+        post.setPublic(isPublic);
+        post.setUpdatedAt(LocalDateTime.now());
+        return postRepository.save(post);
+    }
 }
