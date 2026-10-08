@@ -9,4 +9,5 @@ public class PostRequest {
     private String diaryText;
     private Integer mood;
     private Double sleepHours;
+    private Boolean isPublic;
 }

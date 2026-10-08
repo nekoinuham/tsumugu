@@ -4,61 +4,68 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.example.tsumugu.entity.Post;
 import com.example.tsumugu.entity.User;
 import com.example.tsumugu.repository.PostRepository;
-import com.example.tsumugu.repository.UserRepository;
-import com.example.tsumugu.security.CustomUserDetails;
 
 @Service
 public class PostService {
 
-    // 認証機能ができるまでの固定ユーザーID
-    private static final Long CURRENT_USER_ID = 1L;
-
     private final PostRepository postRepository;
-    private final UserRepository userRepository;
+    private final CurrentUserService currentUserService;
 
-    public PostService(PostRepository postRepository, UserRepository userRepository) {
+    public PostService(PostRepository postRepository, CurrentUserService currentUserService) {
         this.postRepository = postRepository;
-        this.userRepository = userRepository;
-    }
-
-    private User getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        return userDetails.getUser();
+        this.currentUserService = currentUserService;
     }
     
-    public Post createOrUpdateTodayPost(String diaryText, Integer mood, Double sleepHours) {
-    	User currentUser = getCurrentUser();
-    	LocalDate today = LocalDate.now();
-    	
-    	Post post = postRepository.findByUserAndDate(currentUser, today)
-    			.orElse(new Post());
-    	
-    	post.setUser(currentUser);
-    	post.setDate(today);
-    	post.setDiaryText(diaryText);
-    	post.setMood(mood);
-    	post.setSleepHours(sleepHours);
-    	
-    	LocalDateTime now = LocalDateTime.now();
-    	if (post.getId() == null) {
-    		post.setCreatedAt(now);
-    	}
-    	post.setUpdatedAt(now);
-    	
-    	return postRepository.save(post);
+    public Post createOrUpdateTodayPost(String diaryText, Integer mood, Double sleepHours, Boolean isPublic) {
+        User currentUser = currentUserService.getCurrentUser();
+        LocalDate today = LocalDate.now();
+
+        Post post = postRepository.findByUserAndDate(currentUser, today)
+                .orElse(new Post());
+        boolean isNew = post.getId() == null;
+
+        post.setUser(currentUser);
+        post.setDate(today);
+        post.setDiaryText(diaryText);
+        post.setMood(mood);
+        post.setSleepHours(sleepHours);
+
+        if (isPublic != null) {
+            // 明示的に指定されたらそれに従う
+            post.setPublic(isPublic);
+        } else if (isNew) {
+            // 指定がない新規投稿は、直前の投稿の設定を引き継ぐ(初回は非公開)
+            boolean inherited = postRepository
+                    .findFirstByUserAndDateBeforeOrderByDateDesc(currentUser, today)
+                    .map(Post::isPublic)
+                    .orElse(false);
+            post.setPublic(inherited);
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        if (isNew) {
+            post.setCreatedAt(now);
+        }
+        post.setUpdatedAt(now);
+
+        return postRepository.save(post);
     }
     
     public Optional<Post> getTodayPost() {
-        User currentUser = getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
         LocalDate today = LocalDate.now();
         return postRepository.findByUserAndDate(currentUser, today);
+    }
+    
+    // 投稿の公開設定を変更する
+    public Post updateVisibility(Post post, boolean isPublic) {
+        post.setPublic(isPublic);
+        post.setUpdatedAt(LocalDateTime.now());
+        return postRepository.save(post);
     }
 }

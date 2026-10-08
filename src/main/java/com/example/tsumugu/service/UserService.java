@@ -15,10 +15,12 @@ public class UserService {
 	
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
+	private final CurrentUserService currentUserService;
 	
-	public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+	public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, CurrentUserService currentUserService) {
 		this.userRepository = userRepository;
 		this.passwordEncoder = passwordEncoder;
+		this.currentUserService = currentUserService;
 	}
 	
 	public UserResponse register(RegisterRequest request) {
@@ -43,5 +45,14 @@ public class UserService {
 		response.setDisplayName(saved.getDisplayName());
 		
 		return response;
+	}
+	
+	// 鍵アカウントの設定を変更する
+	public boolean updatePrivacy(boolean isPrivate) {
+	    User user = currentUserService.getCurrentUser();
+	    user.setPrivate(isPrivate);
+	    user.setUpdatedAt(LocalDateTime.now());
+	    userRepository.save(user);
+	    return user.isPrivate();
 	}
 }

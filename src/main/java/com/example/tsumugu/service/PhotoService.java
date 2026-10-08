@@ -28,9 +28,9 @@ public class PhotoService {
 	}
 	
 	public Photo uploadPhoto(Post post, MultipartFile file, String comment) throws IOException {
-		List<Photo> existringPhotos = photoRepository.findByPost(post);
-		if (existringPhotos.size() >= MAX_PHOTOS_PER_POST) {
-			throw new IllegalStateException("写真は1投稿にすき最大" + MAX_PHOTOS_PER_POST + "枚までです");
+		List<Photo> existingPhotos = photoRepository.findByPost(post);
+		if (existingPhotos.size() >= MAX_PHOTOS_PER_POST) {
+			throw new IllegalStateException("写真は1投稿につき最大" + MAX_PHOTOS_PER_POST + "枚までです");
 		}
 		
 		Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
