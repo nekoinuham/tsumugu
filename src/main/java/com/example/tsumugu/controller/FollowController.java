@@ -40,6 +40,13 @@ public class FollowController {
         followService.cancelRequest(userId);
         return ResponseEntity.noContent().build();
     }
+    
+    // フォロワーを外す
+    @DeleteMapping("/me/followers/{userId}")
+    public ResponseEntity<Void> removeFollower(@PathVariable Long userId) {
+        followService.removeFollower(userId);
+        return ResponseEntity.noContent().build();
+    }
 
     // 相手との今の関係を取得する
     @GetMapping("/{userId}/follow-status")
