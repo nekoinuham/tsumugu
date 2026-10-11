@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.tsumugu.entity.Post;
 import com.example.tsumugu.entity.User;
+import com.example.tsumugu.repository.FollowRepository;
 
 /**
  * 投稿を閲覧できるかどうかを判定するサービス。
@@ -11,6 +12,12 @@ import com.example.tsumugu.entity.User;
  */
 @Service
 public class PostAccessService {
+
+    private final FollowRepository followRepository;
+
+    public PostAccessService(FollowRepository followRepository) {
+        this.followRepository = followRepository;
+    }
 
     public boolean canView(Post post, User viewer) {
         User owner = post.getUser();
@@ -31,7 +38,6 @@ public class PostAccessService {
         }
 
         // 鍵アカウントの公開投稿はフォロワーのみ
-        // TODO: フォロー機能の実装時に、ここへフォロワーかどうかの判定を追加する
-        return false;
+        return followRepository.existsByFollowerAndFollowee(viewer, owner);
     }
 }
