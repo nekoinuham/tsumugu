@@ -12,6 +12,7 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.example.tsumugu.entity.Photo;
 import com.example.tsumugu.entity.Post;
+import com.example.tsumugu.exception.BadRequestException;
 import com.example.tsumugu.repository.PhotoRepository;
 
 @Service
@@ -28,9 +29,18 @@ public class PhotoService {
 	}
 	
 	public Photo uploadPhoto(Post post, MultipartFile file, String comment) throws IOException {
-		List<Photo> existingPhotos = photoRepository.findByPost(post);
+		
+		if (comment != null && comment.length() > 255) {
+			throw new BadRequestException("写真のコメントは255文字以内で入力してください");
+		}
+		
+		if (file.isEmpty()) {
+			throw new BadRequestException("ファイルを選択してください");
+		}
+		
+		List<Photo> existingPhotos = photoRepository.findByPost(post);		
 		if (existingPhotos.size() >= MAX_PHOTOS_PER_POST) {
-			throw new IllegalStateException("写真は1投稿につき最大" + MAX_PHOTOS_PER_POST + "枚までです");
+			throw new BadRequestException("写真は1投稿につき最大" + MAX_PHOTOS_PER_POST + "枚までです");
 		}
 		
 		Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());

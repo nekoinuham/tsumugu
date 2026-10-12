@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.tsumugu.controller.RegisterRequest;
 import com.example.tsumugu.controller.UserResponse;
 import com.example.tsumugu.entity.User;
+import com.example.tsumugu.exception.ConflictException;
 import com.example.tsumugu.repository.UserRepository;
 
 @Service
@@ -29,7 +30,7 @@ public class UserService {
 
 	public UserResponse register(RegisterRequest request) {
 		if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-			throw new IllegalArgumentException("このメールアドレスは既に登録されています");
+			throw new ConflictException("このメールアドレスは既に登録されています");
 		}
 
 		User user = new User();

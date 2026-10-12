@@ -2,7 +2,6 @@ package com.example.tsumugu.controller;
 
 import java.io.IOException;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,6 +12,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.example.tsumugu.entity.Photo;
 import com.example.tsumugu.entity.Post;
+import com.example.tsumugu.exception.ForbiddenException;
+import com.example.tsumugu.exception.ResourceNotFoundException;
 import com.example.tsumugu.repository.PostRepository;
 import com.example.tsumugu.service.CurrentUserService;
 import com.example.tsumugu.service.PhotoService;
@@ -39,11 +40,11 @@ public class PhotoController {
             @RequestParam(value = "comment", required = false) String comment) throws IOException {
 
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("投稿が見つかりません"));
+                .orElseThrow(() -> new ResourceNotFoundException("投稿が見つかりません"));
 
         // 他人の投稿には写真を追加できない
         if (!post.getUser().getId().equals(currentUserService.getCurrentUser().getId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            throw new ForbiddenException("自分の投稿にのみ写真を追加できます");
         }
 
         Photo photo = photoService.uploadPhoto(post, file, comment);
