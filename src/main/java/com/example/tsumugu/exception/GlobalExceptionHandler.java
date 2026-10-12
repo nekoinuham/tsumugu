@@ -4,6 +4,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -40,6 +41,11 @@ public class GlobalExceptionHandler {
     			.map(error -> error.getDefaultMessage())
     			.collect(Collectors.joining("、"));
     	return build(HttpStatus.BAD_REQUEST, message);
+    }
+    
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException e) {
+        return build(HttpStatus.UNAUTHORIZED, "メールアドレスまたはパスワードが正しくありません");
     }
 
     private ResponseEntity<ErrorResponse> build(HttpStatus status, String message) {
