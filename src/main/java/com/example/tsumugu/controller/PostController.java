@@ -1,6 +1,5 @@
 package com.example.tsumugu.controller;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -11,6 +10,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.tsumugu.entity.Post;
+import com.example.tsumugu.exception.BadRequestException;
+import com.example.tsumugu.exception.ForbiddenException;
+import com.example.tsumugu.exception.ResourceNotFoundException;
 import com.example.tsumugu.repository.PostRepository;
 import com.example.tsumugu.service.CurrentUserService;
 import com.example.tsumugu.service.PostService;
@@ -55,14 +57,14 @@ public class PostController {
             @RequestBody VisibilityRequest request) {
 
         if (request.getIsPublic() == null) {
-            return ResponseEntity.badRequest().build();
+            throw new BadRequestException("isPublicを指定してください");
         }
 
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("投稿が見つかりません"));
+                .orElseThrow(() -> new ResourceNotFoundException("投稿が見つかりません"));
 
         if (!post.getUser().getId().equals(currentUserService.getCurrentUser().getId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            throw new ForbiddenException("自分の投稿のみ変更できます");
         }
 
         Post updated = postService.updateVisibility(post, request.getIsPublic());

@@ -2,7 +2,6 @@ package com.example.tsumugu.controller;
 
 import java.util.List;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,6 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.tsumugu.entity.Comment;
 import com.example.tsumugu.entity.Post;
+import com.example.tsumugu.exception.ForbiddenException;
+import com.example.tsumugu.exception.ResourceNotFoundException;
 import com.example.tsumugu.repository.PostRepository;
 import com.example.tsumugu.service.CommentService;
 import com.example.tsumugu.service.CurrentUserService;
@@ -46,10 +47,10 @@ public class CommentController {
             @RequestBody CommentRequest request) {
 
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("投稿が見つかりません"));
+                .orElseThrow(() -> new ResourceNotFoundException("投稿が見つかりません"));
 
         if (!postAccessService.canView(post, currentUserService.getCurrentUser())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            throw new ForbiddenException("この投稿は閲覧できません");
         }
 
         Comment comment = commentService.addComment(post, request.getCommentText());
@@ -61,10 +62,10 @@ public class CommentController {
     public ResponseEntity<List<CommentResponse>> getComments(@PathVariable Long postId) {
 
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("投稿が見つかりません"));
+                .orElseThrow(() -> new ResourceNotFoundException("投稿が見つかりません"));
 
         if (!postAccessService.canView(post, currentUserService.getCurrentUser())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            throw new ForbiddenException("この投稿は閲覧できません");
         }
 
         List<CommentResponse> responses = commentService.getComments(post)
@@ -75,7 +76,7 @@ public class CommentController {
         return ResponseEntity.ok(responses);
     }
 
-    // コメントを削除する(投稿者本人のみ)
+    // コメントを削除する(コメントした本人、または投稿の持ち主)
     @DeleteMapping("/comments/{commentId}")
     public ResponseEntity<Void> deleteComment(@PathVariable Long commentId) {
         commentService.deleteComment(commentId);

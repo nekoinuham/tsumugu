@@ -8,6 +8,9 @@ import org.springframework.stereotype.Service;
 import com.example.tsumugu.entity.Comment;
 import com.example.tsumugu.entity.Post;
 import com.example.tsumugu.entity.User;
+import com.example.tsumugu.exception.BadRequestException;
+import com.example.tsumugu.exception.ForbiddenException;
+import com.example.tsumugu.exception.ResourceNotFoundException;
 import com.example.tsumugu.repository.CommentRepository;
 
 @Service
@@ -23,6 +26,13 @@ public class CommentService {
 	
 	// コメントを投稿する
 	public Comment addComment(Post post, String commentText) {
+		if (commentText == null || commentText.isBlank()) {
+			throw new BadRequestException("コメントを入力してください");
+		}
+		if (commentText.length() > 255) {
+			throw new BadRequestException("コメントは255文字以内で入力してください");
+		}
+		
 		User currentUser = currentUserService.getCurrentUser();
 		
 		Comment comment = new Comment();
@@ -45,13 +55,13 @@ public class CommentService {
 	    User currentUser = currentUserService.getCurrentUser();
 
 	    Comment comment = commentRepository.findById(commentId)
-	            .orElseThrow(() -> new IllegalArgumentException("コメントが見つかりません"));
+	            .orElseThrow(() -> new ResourceNotFoundException("コメントが見つかりません"));
 
 	    boolean isCommentAuthor = comment.getUser().getId().equals(currentUser.getId());
 	    boolean isPostOwner = comment.getPost().getUser().getId().equals(currentUser.getId());
 
 	    if (!isCommentAuthor && !isPostOwner) {
-	        throw new IllegalStateException("コメントを削除できるのは、コメントした本人か投稿の持ち主のみです");
+	        throw new ForbiddenException("コメントを削除できるのは、コメントした本人か投稿の持ち主のみです");
 	    }
 
 	    commentRepository.delete(comment);

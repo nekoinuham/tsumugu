@@ -1,6 +1,5 @@
 package com.example.tsumugu.controller;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -9,6 +8,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.tsumugu.entity.Post;
+import com.example.tsumugu.exception.ForbiddenException;
+import com.example.tsumugu.exception.ResourceNotFoundException;
 import com.example.tsumugu.repository.PostRepository;
 import com.example.tsumugu.service.CurrentUserService;
 import com.example.tsumugu.service.LikeService;
@@ -35,10 +36,10 @@ public class LikeController {
     @PostMapping("/{postId}/likes")
     public ResponseEntity<Long> likePost(@PathVariable Long postId) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("投稿が見つかりません"));
+                .orElseThrow(() -> new ResourceNotFoundException("投稿が見つかりません"));
 
         if (!postAccessService.canView(post, currentUserService.getCurrentUser())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            throw new ForbiddenException("この投稿は閲覧できません");
         }
 
         long likeCount = likeService.likePost(post);
@@ -49,7 +50,7 @@ public class LikeController {
     @DeleteMapping("/{postId}/likes")
     public ResponseEntity<Long> unlikePost(@PathVariable Long postId) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new IllegalArgumentException("投稿が見つかりません"));
+                .orElseThrow(() -> new ResourceNotFoundException("投稿が見つかりません"));
 
         long likeCount = likeService.unlikePost(post);
         return ResponseEntity.ok(likeCount);

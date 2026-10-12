@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.tsumugu.exception.BadRequestException;
 import com.example.tsumugu.service.UserService;
 
 @RestController
@@ -22,7 +23,7 @@ public class ProfileController {
     @PatchMapping("/privacy")
     public ResponseEntity<Boolean> updatePrivacy(@RequestBody PrivacyRequest request) {
         if (request.getIsPrivate() == null) {
-            return ResponseEntity.badRequest().build();
+            throw new BadRequestException("isPrivateを指定してください");
         }
 
         boolean result = userService.updatePrivacy(request.getIsPrivate());

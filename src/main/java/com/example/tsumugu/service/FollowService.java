@@ -9,6 +9,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.tsumugu.entity.Follow;
 import com.example.tsumugu.entity.FollowRequest;
 import com.example.tsumugu.entity.User;
+import com.example.tsumugu.exception.BadRequestException;
+import com.example.tsumugu.exception.ForbiddenException;
+import com.example.tsumugu.exception.ResourceNotFoundException;
 import com.example.tsumugu.repository.FollowRepository;
 import com.example.tsumugu.repository.FollowRequestRepository;
 import com.example.tsumugu.repository.UserRepository;
@@ -36,7 +39,7 @@ public class FollowService {
 
     private User findUser(Long userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("ユーザーが見つかりません"));
+                .orElseThrow(() -> new ResourceNotFoundException("ユーザーが見つかりません"));
     }
 
     // フォローする(相手が公開アカウントなら即フォロー、鍵アカウントなら申請になる)
@@ -46,7 +49,7 @@ public class FollowService {
         User target = findUser(targetUserId);
 
         if (me.getId().equals(target.getId())) {
-            throw new IllegalArgumentException("自分自身はフォローできません");
+            throw new BadRequestException("自分自身はフォローできません");
         }
 
         // すでにフォロー中・申請中なら、何も追加せずに今の状態を返す
@@ -110,7 +113,7 @@ public class FollowService {
         return FollowStatus.NONE;
     }
     
- // 自分宛ての申請一覧を取得する
+    // 自分宛ての申請一覧を取得する
     public List<FollowRequest> getReceivedRequests() {
         User me = currentUserService.getCurrentUser();
         return followRequestRepository.findByFolloweeOrderByCreatedAtAsc(me);
@@ -151,10 +154,10 @@ public class FollowService {
     private FollowRequest findOwnRequest(Long requestId) {
         User me = currentUserService.getCurrentUser();
         FollowRequest request = followRequestRepository.findById(requestId)
-                .orElseThrow(() -> new IllegalArgumentException("申請が見つかりません"));
+                .orElseThrow(() -> new ResourceNotFoundException("申請が見つかりません"));
 
         if (!request.getFollowee().getId().equals(me.getId())) {
-            throw new IllegalStateException("自分宛ての申請のみ操作できます");
+            throw new ForbiddenException("自分宛ての申請のみ操作できます");
         }
         return request;
     }
