@@ -57,4 +57,9 @@ public class PhotoService {
 		
 		return photoRepository.save(photo);
 	}
+	
+	// 投稿に紐づく写真を、追加された順に取得する
+	public List<Photo> getPhotos(Post post) {
+		return photoRepository.findByPostOrderByCreatedAtAsc(post);
+	}
 }

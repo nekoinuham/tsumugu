@@ -11,4 +11,6 @@ public interface PhotoRepository extends JpaRepository<Photo, Long> {
 
 	List<Photo> findByPost(Post post);
 	
+	// 投稿に紐づく写真を、追加された順に取得する
+	List<Photo> findByPostOrderByCreatedAtAsc(Post post);
 }
