@@ -12,7 +12,10 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.example.tsumugu.entity.Photo;
 import com.example.tsumugu.entity.Post;
+import com.example.tsumugu.entity.User;
 import com.example.tsumugu.exception.BadRequestException;
+import com.example.tsumugu.exception.ForbiddenException;
+import com.example.tsumugu.exception.ResourceNotFoundException;
 import com.example.tsumugu.repository.PhotoRepository;
 
 @Service
@@ -22,10 +25,12 @@ public class PhotoService {
 	
 	private final PhotoRepository photoRepository;
 	private final Cloudinary cloudinary;
+	private final CurrentUserService currentUserService;
 	
-	public PhotoService(PhotoRepository photoRepository, Cloudinary cloudinary) {
+	public PhotoService(PhotoRepository photoRepository, Cloudinary cloudinary, CurrentUserService currentUserService) {
 		this.photoRepository = photoRepository;
 		this.cloudinary = cloudinary;
+		this.currentUserService = currentUserService;
 	}
 	
 	public Photo uploadPhoto(Post post, MultipartFile file, String comment) throws IOException {
@@ -61,5 +66,29 @@ public class PhotoService {
 	// 投稿に紐づく写真を、追加された順に取得する
 	public List<Photo> getPhotos(Post post) {
 		return photoRepository.findByPostOrderByCreatedAtAsc(post);
+	}
+	
+	// 写真のコメントを変更する(投稿の持ち主のみ)。空ならコメントを消す
+	public Photo updateComment(Long photoId, String comment) {
+		Photo photo = findOwnPhoto(photoId);
+		
+		// 空文字や空白だけのときは、コメントなし(null)として保存する
+		String normalized = (comment == null || comment.isBlank()) ? null : comment;
+		
+		photo.setComment(normalized);
+		photo.setUpdatedAt(LocalDateTime.now());
+		return photoRepository.save(photo);
+	}
+	
+	// 自分の投稿の写真を取得する(他人の写真は操作できない)
+	private Photo findOwnPhoto(Long photoId) {
+		Photo photo = photoRepository.findById(photoId)
+				.orElseThrow(() -> new ResourceNotFoundException("写真が見つかりません"));
+		
+		User me = currentUserService.getCurrentUser();
+		if (!photo.getPost().getUser().getId().equals(me.getId())) {
+			throw new ForbiddenException("自分の投稿の写真のみ操作できます");
+		}
+		return photo;
 	}
 }

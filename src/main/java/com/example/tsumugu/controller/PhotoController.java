@@ -2,9 +2,13 @@ package com.example.tsumugu.controller;
 
 import java.io.IOException;
 
+import jakarta.validation.Valid;
+
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,21 +23,22 @@ import com.example.tsumugu.service.CurrentUserService;
 import com.example.tsumugu.service.PhotoService;
 
 @RestController
-@RequestMapping("/api/posts")
+@RequestMapping("/api")
 public class PhotoController {
 
     private final PhotoService photoService;
     private final PostRepository postRepository;
     private final CurrentUserService currentUserService;
 
-    public PhotoController(PhotoService photoService, PostRepository postRepository, CurrentUserService currentUserService) {
+    public PhotoController(PhotoService photoService, PostRepository postRepository,
+            CurrentUserService currentUserService) {
         this.photoService = photoService;
         this.postRepository = postRepository;
         this.currentUserService = currentUserService;
     }
 
     // 写真を追加する(投稿の持ち主のみ)
-    @PostMapping("/{postId}/photos")
+    @PostMapping("/posts/{postId}/photos")
     public ResponseEntity<PhotoResponse> uploadPhoto(
             @PathVariable Long postId,
             @RequestParam("file") MultipartFile file,
@@ -48,6 +53,16 @@ public class PhotoController {
         }
 
         Photo photo = photoService.uploadPhoto(post, file, comment);
+        return ResponseEntity.ok(new PhotoResponse(photo));
+    }
+
+    // 写真のコメントを変更する(投稿の持ち主のみ)
+    @PatchMapping("/photos/{photoId}")
+    public ResponseEntity<PhotoResponse> updateComment(
+            @PathVariable Long photoId,
+            @Valid @RequestBody PhotoCommentRequest request) {
+
+        Photo photo = photoService.updateComment(photoId, request.getComment());
         return ResponseEntity.ok(new PhotoResponse(photo));
     }
 }
