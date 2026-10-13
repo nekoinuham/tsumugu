@@ -5,6 +5,7 @@ import java.io.IOException;
 import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -64,5 +65,12 @@ public class PhotoController {
 
         Photo photo = photoService.updateComment(photoId, request.getComment());
         return ResponseEntity.ok(new PhotoResponse(photo));
+    }
+    
+    // 写真を削除する(投稿の持ち主のみ)
+    @DeleteMapping("/photos/{photoId}")
+    public ResponseEntity<Void> deletePhoto(@PathVariable Long photoId) {
+    	photoService.deletePhoto(photoId);
+    	return ResponseEntity.noContent().build();
     }
 }

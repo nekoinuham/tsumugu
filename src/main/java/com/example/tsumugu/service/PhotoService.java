@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -20,6 +22,8 @@ import com.example.tsumugu.repository.PhotoRepository;
 
 @Service
 public class PhotoService {
+	
+	private static final Logger log = LoggerFactory.getLogger(PhotoService.class);
 
 	private static final int MAX_PHOTOS_PER_POST = 4;
 	
@@ -90,5 +94,35 @@ public class PhotoService {
 			throw new ForbiddenException("自分の投稿の写真のみ操作できます");
 		}
 		return photo;
+	}
+	
+	// 写真を削除する(投稿の持ち主のみ)。DBの行と、Cloudinary上の画像の両方を消す
+	public void deletePhoto(Long photoId) {
+		Photo photo = findOwnPhoto(photoId);
+		photoRepository.delete(photo);
+		deleteFromCloudinary(photo.getImagePath());
+	}
+
+	// Cloudinary上の画像を削除する(失敗しても、写真の削除自体は止めない)
+	private void deleteFromCloudinary(String imageUrl) {
+		try {
+			String publicId = extractPublicId(imageUrl);
+			Map result = cloudinary.uploader().destroy(publicId, ObjectUtils.asMap("invalidate", true));
+
+			if (!"ok".equals(result.get("result"))) {
+				log.warn("Cloudinary上の画像を削除できませんでした: {} (結果: {})", imageUrl, result.get("result"));
+			}
+		} catch (Exception e) {
+			log.warn("Cloudinary上の画像の削除に失敗しました: {}", imageUrl, e);
+		}
+	}
+
+	// CloudinaryのURLから、画像のID(public_id)を取り出す
+	// 例:https://res.cloudinary.com/xxx/image/upload/v1790143076/abcde12345.png → abcde12345
+	// フォルダ分けをしていない、今の保存のしかたを前提にしている
+	private String extractPublicId(String imageUrl) {
+		String fileName = imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
+		int dotIndex = fileName.lastIndexOf('.');
+		return dotIndex == -1 ? fileName : fileName.substring(0, dotIndex);
 	}
 }
