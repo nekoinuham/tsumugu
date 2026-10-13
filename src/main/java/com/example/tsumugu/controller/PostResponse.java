@@ -2,7 +2,9 @@ package com.example.tsumugu.controller;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
+import com.example.tsumugu.entity.Photo;
 import com.example.tsumugu.entity.Post;
 
 import lombok.Getter;
@@ -20,8 +22,9 @@ public class PostResponse {
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
     private final Boolean isPublic;
+    private final List<PhotoResponse> photos;
 
-    public PostResponse(Post post) {
+    public PostResponse(Post post, List<Photo> photos) {
         this.id = post.getId();
         this.userId = post.getUser().getId();
         this.userDisplayName = post.getUser().getDisplayName();
@@ -32,5 +35,6 @@ public class PostResponse {
         this.createdAt = post.getCreatedAt();
         this.updatedAt = post.getUpdatedAt();
         this.isPublic = post.isPublic();
+        this.photos = photos.stream().map(PhotoResponse::new).toList();
     }
 }
