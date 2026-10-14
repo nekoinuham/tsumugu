@@ -17,6 +17,7 @@ import com.example.tsumugu.exception.ForbiddenException;
 import com.example.tsumugu.exception.ResourceNotFoundException;
 import com.example.tsumugu.repository.PostRepository;
 import com.example.tsumugu.service.CurrentUserService;
+import com.example.tsumugu.service.PostAccessService;
 import com.example.tsumugu.service.PostResponseService;
 import com.example.tsumugu.service.PostService;
 
@@ -28,12 +29,14 @@ public class PostController {
     private final PostRepository postRepository;
     private final CurrentUserService currentUserService;
     private final PostResponseService postResponseService;
+    private final PostAccessService postAccessService;
 
-    public PostController(PostService postService, PostRepository postRepository, CurrentUserService currentUserService, PostResponseService postResponseService) {
+    public PostController(PostService postService, PostRepository postRepository, CurrentUserService currentUserService, PostResponseService postResponseService, PostAccessService postAccessService) {
         this.postService = postService;
         this.postRepository = postRepository;
         this.currentUserService = currentUserService;
         this.postResponseService = postResponseService;
+        this.postAccessService = postAccessService;
     }
 
     @PostMapping("/today")
@@ -74,5 +77,18 @@ public class PostController {
 
         Post updated = postService.updateVisibility(post, request.getIsPublic());
         return ResponseEntity.ok(postResponseService.toResponse(updated));
+    }
+    
+ // 投稿の詳細を取得する(閲覧できる人のみ)
+    @GetMapping("/{postId}")
+    public ResponseEntity<PostResponse> getPost(@PathVariable Long postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("投稿が見つかりません"));
+
+        if (!postAccessService.canView(post, currentUserService.getCurrentUser())) {
+            throw new ForbiddenException("この投稿は閲覧できません");
+        }
+
+        return ResponseEntity.ok(postResponseService.toResponse(post));
     }
 }
