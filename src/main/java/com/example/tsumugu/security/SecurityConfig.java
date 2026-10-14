@@ -2,6 +2,7 @@ package com.example.tsumugu.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -9,6 +10,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 
 @Configuration
 @EnableWebSecurity
@@ -33,7 +35,11 @@ public class SecurityConfig {
 					.anyRequest().authenticated()
 			)
 			.httpBasic(httpBasic -> {})
-			.formLogin(formLogin -> formLogin.disable());
+			.logout(logout -> logout
+			        .logoutUrl("/api/auth/logout")
+			        .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT))
+			        .deleteCookies("JSESSIONID")
+			);
 		
 		return http.build();
 	}
