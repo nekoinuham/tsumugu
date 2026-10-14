@@ -23,8 +23,11 @@ public class PostResponse {
     private final LocalDateTime updatedAt;
     private final Boolean isPublic;
     private final List<PhotoResponse> photos;
+    private final long likeCount;
+    private final boolean likedByMe;
+    private final long commentCount;
 
-    public PostResponse(Post post, List<Photo> photos) {
+    public PostResponse(Post post, List<Photo> photos, long likeCount, boolean likedByMe, long commentCount) {
         this.id = post.getId();
         this.userId = post.getUser().getId();
         this.userDisplayName = post.getUser().getDisplayName();
@@ -36,5 +39,8 @@ public class PostResponse {
         this.updatedAt = post.getUpdatedAt();
         this.isPublic = post.isPublic();
         this.photos = photos.stream().map(PhotoResponse::new).toList();
+        this.likeCount = likeCount;
+        this.likedByMe = likedByMe;
+        this.commentCount = commentCount;
     }
 }

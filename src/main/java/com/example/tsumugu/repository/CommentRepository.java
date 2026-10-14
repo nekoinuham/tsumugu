@@ -11,4 +11,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 	
 	// 指定した投稿に紐づくコメントを一覧取得する
 	List<Comment> findByPostOrderByCreatedAtAsc(Post post);
+	
+	// この投稿についたコメントの数
+	long countByPost(Post post);
 }

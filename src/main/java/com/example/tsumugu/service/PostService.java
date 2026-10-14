@@ -2,6 +2,7 @@ package com.example.tsumugu.service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -67,5 +68,13 @@ public class PostService {
         post.setPublic(isPublic);
         post.setUpdatedAt(LocalDateTime.now());
         return postRepository.save(post);
+    }
+    
+ // 公開タイムラインを取得する(beforeIdがあれば、そのIDより古い投稿の続き)
+    public List<Post> getTimeline(Long beforeId) {
+        if (beforeId == null) {
+            return postRepository.findTop20ByIsPublicTrueAndUserIsPrivateFalseOrderByIdDesc();
+        }
+        return postRepository.findTop20ByIsPublicTrueAndUserIsPrivateFalseAndIdLessThanOrderByIdDesc(beforeId);
     }
 }
