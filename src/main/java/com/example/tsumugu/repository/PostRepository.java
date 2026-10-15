@@ -21,4 +21,12 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     
     // 公開タイムラインの続き:指定したIDより古いものを、新しい順に20件
     List<Post> findTop20ByIsPublicTrueAndUserIsPrivateFalseAndIdLessThanOrderByIdDesc(Long beforeId);
+    
+    // 本人用:非公開も含めた自分の投稿
+    List<Post> findTop20ByUserOrderByIdDesc(User user);
+    List<Post> findTop20ByUserAndIdLessThanOrderByIdDesc(User user, Long beforeId);
+
+    // 他人用:公開投稿だけ
+    List<Post> findTop20ByUserAndIsPublicTrueOrderByIdDesc(User user);
+    List<Post> findTop20ByUserAndIsPublicTrueAndIdLessThanOrderByIdDesc(User user, Long beforeId);
 }
