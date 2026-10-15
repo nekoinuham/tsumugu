@@ -19,6 +19,7 @@ public class PostAccessService {
         this.followRepository = followRepository;
     }
 
+    // その投稿を見られるかどうか
     public boolean canView(Post post, User viewer) {
         User owner = post.getUser();
 
@@ -32,12 +33,24 @@ public class PostAccessService {
             return false;
         }
 
-        // 公開アカウントの公開投稿は誰でも見られる
+        // 公開投稿は、そのアカウントの投稿を見られる立場なら見られる
+        return canViewAccount(owner, viewer);
+    }
+
+    // そのユーザーの公開投稿を見られる立場かどうか
+    public boolean canViewAccount(User owner, User viewer) {
+        // 本人
+        if (owner.getId().equals(viewer.getId())) {
+            return true;
+        }
+
+        // 公開アカウントなら誰でも
         if (!owner.isPrivate()) {
             return true;
         }
 
-        // 鍵アカウントの公開投稿はフォロワーのみ
+        // 鍵アカウントならフォロワーのみ
         return followRepository.existsByFollowerAndFollowee(viewer, owner);
     }
 }
+    
