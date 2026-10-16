@@ -29,4 +29,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     // 他人用:公開投稿だけ
     List<Post> findTop20ByUserAndIsPublicTrueOrderByIdDesc(User user);
     List<Post> findTop20ByUserAndIsPublicTrueAndIdLessThanOrderByIdDesc(User user, Long beforeId);
+
+    // 指定した期間の、自分の投稿を日付の古い順に取得する(カレンダー用)
+    List<Post> findByUserAndDateBetweenOrderByDateAsc(User user, LocalDate start, LocalDate end);
 }

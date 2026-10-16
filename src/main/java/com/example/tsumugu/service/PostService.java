@@ -2,6 +2,7 @@ package com.example.tsumugu.service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.tsumugu.entity.Post;
 import com.example.tsumugu.entity.User;
+import com.example.tsumugu.exception.BadRequestException;
 import com.example.tsumugu.repository.PostRepository;
 
 @Service
@@ -70,11 +72,30 @@ public class PostService {
         return postRepository.save(post);
     }
     
- // 公開タイムラインを取得する(beforeIdがあれば、そのIDより古い投稿の続き)
+    // 公開タイムラインを取得する(beforeIdがあれば、そのIDより古い投稿の続き)
     public List<Post> getTimeline(Long beforeId) {
         if (beforeId == null) {
             return postRepository.findTop20ByIsPublicTrueAndUserIsPrivateFalseOrderByIdDesc();
         }
         return postRepository.findTop20ByIsPublicTrueAndUserIsPrivateFalseAndIdLessThanOrderByIdDesc(beforeId);
+    }
+    
+ // カレンダー用:指定した月の、自分の投稿を取得する(省略したら今月)
+    public List<Post> getCalendarPosts(Integer year, Integer month) {
+        YearMonth target;
+
+        if (year == null && month == null) {
+            target = YearMonth.now();
+        } else if (year == null || month == null) {
+            throw new BadRequestException("yearとmonthは両方指定してください");
+        } else if (month < 1 || month > 12) {
+            throw new BadRequestException("monthは1〜12で指定してください");
+        } else {
+            target = YearMonth.of(year, month);
+        }
+
+        User me = currentUserService.getCurrentUser();
+        return postRepository.findByUserAndDateBetweenOrderByDateAsc(
+                me, target.atDay(1), target.atEndOfMonth());
     }
 }

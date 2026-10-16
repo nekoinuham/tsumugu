@@ -1,5 +1,7 @@
 package com.example.tsumugu.controller;
 
+import java.util.List;
+
 import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
@@ -9,6 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.tsumugu.entity.Post;
@@ -79,7 +82,7 @@ public class PostController {
         return ResponseEntity.ok(postResponseService.toResponse(updated));
     }
     
- // 投稿の詳細を取得する(閲覧できる人のみ)
+    // 投稿の詳細を取得する(閲覧できる人のみ)
     @GetMapping("/{postId}")
     public ResponseEntity<PostResponse> getPost(@PathVariable Long postId) {
         Post post = postRepository.findById(postId)
@@ -90,5 +93,19 @@ public class PostController {
         }
 
         return ResponseEntity.ok(postResponseService.toResponse(post));
+    }
+    
+    // カレンダー:指定した月の、記録がある日を取得する
+    @GetMapping("/calendar")
+    public ResponseEntity<List<CalendarDayResponse>> getCalendar(
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer month) {
+
+        List<CalendarDayResponse> days = postService.getCalendarPosts(year, month)
+                .stream()
+                .map(CalendarDayResponse::new)
+                .toList();
+
+        return ResponseEntity.ok(days);
     }
 }
